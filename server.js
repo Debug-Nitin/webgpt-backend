@@ -1,10 +1,14 @@
 import fastify from 'fastify';
-import fastifySwagger from '@fastify/swagger';
-import fastifyApiReference from '@scalar/fastify-api-reference';
 import routes from './routes/routes.js';
 import dotenv from 'dotenv';
-import { swaggerOptions } from './config/swaggerConfig.js';
 import { initializeDatabase, closeDatabase } from './config/db.js';
+
+// Import middleware
+import registerRateLimiter from './middleware/rateLimit.js';
+import registerLogger from './middleware/logger.js';
+import registerDocumentation from './middleware/documentation.js';
+import registerErrorHandler from './middleware/errorHandler.js';
+import registerCors from './middleware/cors.js'; 
 
 dotenv.config();
 
@@ -17,29 +21,22 @@ if (!process.env.PORT) {
   process.exit(1);
 }
 
-// Swagger Configuration
-app.register(fastifySwagger, swaggerOptions);
+// Register middleware
+registerLogger(app);
+registerErrorHandler(app);
 
-// Register Routes
-app.register(routes, { prefix: '/api' });
+// Register async middleware
+const setupServer = async () => {
+  // Register CORS middleware first (important!)
+  await registerCors(app); // Add this line
+  
+  // Register middleware that returns promises
+  await registerRateLimiter(app);
+  await registerDocumentation(app);
 
-// Register fastifyApiReference
-app.register(fastifyApiReference, {
-  routePrefix: '/api-reference',
-  configuration: {
-    title: 'API Reference',
-    description: 'API reference documentation',
-    version: '1.0.0',
-  }
-});
-
-// Error Handler
-app.setErrorHandler((error, request, reply) => {
-  app.log.error(error);
-  const statusCode = error.statusCode || 500;
-  const message = error.message || 'Internal Server Error';
-  reply.status(statusCode).send({ error: message });
-});
+  // Register routes
+  app.register(routes, { prefix: '/api' });
+};
 
 // Graceful Shutdown
 const shutdown = async () => {
@@ -64,6 +61,9 @@ const start = async () => {
     
     // Initialize database connection
     await initializeDatabase();
+    
+    // Setup middleware and routes
+    await setupServer();
     
     // Start the server
     await app.listen({ port: PORT, host: '0.0.0.0' });

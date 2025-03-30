@@ -22,11 +22,37 @@ export const querySchema = {
         confidence: { type: 'number' },
       },
     },
+    400: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+      },
+    },
+    202: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        queued: { type: 'boolean' },
+      },
+    },
   },
 };
 
 const queryHandler = async (request, reply) => {
-  // Pass the data to the controller
+  const { query } = request.body;
+  
+  // Basic validation (Fastify will actually handle this based on the schema,
+  // but it's good to have as a safety check)
+  if (!query || query.trim() === '') {
+    return reply.status(400).send({
+      success: false,
+      message: 'Query is required',
+    });
+  }
+  
+  // Pass the validated data to the controller
   return queryController(request.body, reply);
 };
 
