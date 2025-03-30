@@ -1,31 +1,29 @@
-const queryController = require('../controllers/queryController'); // Import controller
-const { Type } = require('@sinclair/typebox')
-//Scalar schema
+import queryController from '../controllers/queryController.js';
 
-module.exports = async function (fastify, opts) {
-
-  fastify.route({
-    method: 'POST',
-    url: '/query',
-    schema: {
-        body: Type.Object({
-          query: Type.String(),
-          website: Type.Optional(Type.String()),
-        }),
-
-        response: {
-            200: Type.Object({
-                query: Type.String(),
-                answer: Type.String(),
-                source_url: Type.Optional(Type.String()),
-
-            })
-
-        }
-
+async function routes(fastify, options) {
+  fastify.post('/query', { schema: {
+    description: 'Accepts a query and returns the most relevant answer',
+    body: {
+      type: 'object',
+      properties: {
+        query: { type: 'string' },
+        website: { type: 'string' },
+      },
+      required: ['query'],
     },
+    response: {
+      200: {
+        type: 'object',
+        properties: {
+          query: { type: 'string' },
+          answer: { type: 'string' },
+          source_url: { type: 'string' },
+          confidence: { type: 'number' },
+        },
+      },
+    },
+  }
+ }, queryController);
+}
 
-    handler: queryController.handleQuery // Use the controller
-
-  });
-};
+export default routes;
