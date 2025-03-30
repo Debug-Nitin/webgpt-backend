@@ -1,9 +1,10 @@
 import fastify from 'fastify';
 import fastifySwagger from '@fastify/swagger';
 import fastifyApiReference from '@scalar/fastify-api-reference';
-import queryRoutes from './routes/queryRoutes.js';
+import routes from './routes/routes.js';
 import dotenv from 'dotenv';
 import { swaggerOptions } from './config/swaggerConfig.js';
+import { initializeDatabase, closeDatabase } from './config/db.js';
 
 dotenv.config();
 
@@ -20,7 +21,7 @@ if (!process.env.PORT) {
 app.register(fastifySwagger, swaggerOptions);
 
 // Register Routes
-app.register(queryRoutes, { prefix: '/api' });
+app.register(routes, { prefix: '/api' });
 
 // Register fastifyApiReference
 app.register(fastifyApiReference, {
@@ -44,6 +45,7 @@ app.setErrorHandler((error, request, reply) => {
 const shutdown = async () => {
   try {
     console.log('Shutting down server...');
+    await closeDatabase();
     await app.close();
     process.exit(0);
   } catch (err) {
@@ -59,6 +61,11 @@ process.on('SIGTERM', shutdown);
 const start = async () => {
   try {
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Initialize database connection
+    await initializeDatabase();
+    
+    // Start the server
     await app.listen({ port: PORT, host: '0.0.0.0' });
     console.log(`Server running at http://localhost:${PORT}`);
   } catch (err) {
@@ -66,4 +73,5 @@ const start = async () => {
     process.exit(1);
   }
 };
+
 start();
