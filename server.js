@@ -2,6 +2,8 @@ import fastify from 'fastify';
 import routes from './routes/routes.js';
 import dotenv from 'dotenv';
 import { initializeDatabase, closeDatabase } from './config/db.js';
+import { runMigrations } from './utils/migrate.js';
+import scheduler from './services/cronScheduler.js';
 
 // Import middleware
 import registerRateLimiter from './middleware/rateLimit.js';
@@ -28,7 +30,7 @@ registerErrorHandler(app);
 // Register async middleware
 const setupServer = async () => {
   // Register CORS middleware first (important!)
-  await registerCors(app); // Add this line
+  await registerCors(app);
   
   // Register middleware that returns promises
   await registerRateLimiter(app);
@@ -42,6 +44,10 @@ const setupServer = async () => {
 const shutdown = async () => {
   try {
     console.log('Shutting down server...');
+    
+    // Stop all scheduled jobs
+    scheduler.stopAllJobs();
+    
     await closeDatabase();
     await app.close();
     process.exit(0);
@@ -57,13 +63,24 @@ process.on('SIGTERM', shutdown);
 // Start Server
 const start = async () => {
   try {
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    const environment = process.env.NODE_ENV || 'development';
+    console.log(`Environment: ${environment}`);
+    
+    // Run migrations first
+    const migrationsSuccessful = await runMigrations(environment);
+    if (!migrationsSuccessful) {
+      console.error('Server startup aborted due to migration errors');
+      process.exit(1);
+    }
     
     // Initialize database connection
     await initializeDatabase();
     
     // Setup middleware and routes
     await setupServer();
+    
+    // Start maintenance cron jobs
+    scheduler.startMaintenanceJobs();
     
     // Start the server
     await app.listen({ port: PORT, host: '0.0.0.0' });
