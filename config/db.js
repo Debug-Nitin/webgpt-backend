@@ -17,7 +17,9 @@ export const initializeDatabase = async () => {
     
     // Test connection
     await dbInstance.raw('SELECT 1');
-    console.log(`✅ PostgreSQL connected using Knex in ${environment} mode`);
+    
+    const sslEnabled = process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production';
+    console.log(`✅ PostgreSQL connected using Knex in ${environment} mode (SSL: ${sslEnabled})`);
     
     return dbInstance;
   } catch (err) {

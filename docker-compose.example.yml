@@ -1,0 +1,88 @@
+services:
+  # API Server
+  api:
+    build: .
+    container_name: webgpt-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=your_db_password
+      - DB_NAME=webgpt
+      - DB_SSL=false
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=root
+      - RABBITMQ_PASS=your_rabbitmq_password
+      - JWT_SECRET=your_jwt_secret
+      - JWT_EXPIRATION=1d
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: node server.js
+
+  # Worker service
+  worker:
+    build: .
+    container_name: webgpt-worker
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=your_db_password
+      - DB_NAME=webgpt
+      - DB_SSL=false
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=root
+      - RABBITMQ_PASS=your_rabbitmq_password
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: node worker.js
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: webgpt-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=your_db_password
+      - POSTGRES_DB=webgpt
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: webgpt-rabbitmq
+    restart: unless-stopped
+    hostname: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=root
+      - RABBITMQ_DEFAULT_PASS=your_rabbitmq_password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
