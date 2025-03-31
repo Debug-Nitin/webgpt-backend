@@ -5,6 +5,7 @@ export const statusSchema = {
   description: 'Get the current status of the crawler service',
   tags: ['webgpt'],
   summary: 'Check crawler service status',
+  security: [{ authorization: [] }], 
   response: {
     200: {
       type: 'object',
@@ -30,6 +31,22 @@ export const statusSchema = {
         }
       }
     },
+    401: {
+      type: 'object',
+      description: 'Authentication error',
+      properties: {
+        success: { type: 'boolean', example: false },
+        error: { type: 'string', example: 'Authorization header missing or invalid' }
+      }
+    },
+    403: {
+      type: 'object',
+      description: 'Forbidden',
+      properties: {
+        success: { type: 'boolean', example: false },
+        error: { type: 'string', example: 'Access denied' }
+      }
+    },
     500: {
       type: 'object',
       description: 'Error response',
@@ -44,6 +61,9 @@ export const statusSchema = {
 
 const statusHandler = async (request, reply) => {
   try {
+    // Now we have access to request.user from the authentication middleware
+    console.log(`Status check by user: ${request.user?.username}`);
+
     const status = getCrawlerStatus();
     return reply.send(status);
   } catch (error) {

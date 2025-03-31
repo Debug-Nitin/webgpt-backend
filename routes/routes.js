@@ -1,16 +1,35 @@
-import queryHandler, { querySchema } from '../handler/queryHandler.js';
-import crawlHandler, { crawlSchema } from '../handler/crawlHandler.js';
-import statusHandler, { statusSchema } from '../handler/statusHandler.js';
+import queryHandler, { querySchema } from '../handlers/queryHandler.js';
+import crawlHandler, { crawlSchema } from '../handlers/crawlHandler.js';
+import statusHandler, { statusSchema } from '../handlers/statusHandler.js';
+import { registerHandler, loginHandler, authSchema } from '../handlers/authHandler.js';
+import { authenticate } from '../middleware/auth.js';
 
 async function routes(fastify, options) {
-  // Query endpoint
-  fastify.post('/query', { schema: querySchema }, queryHandler);
+  // Public auth routes
+  fastify.post('/auth/register', { 
+    schema: authSchema.register 
+  }, registerHandler);
   
-  // Crawl endpoint
-  fastify.post('/crawl', { schema: crawlSchema }, crawlHandler);
+  fastify.post('/auth/login', { 
+    schema: authSchema.login 
+  }, loginHandler);
   
-  // Status endpoint - GET request for easy checking
-  fastify.get('/status', { schema: statusSchema }, statusHandler);
+  // Protected routes
+  fastify.post('/query', { 
+    schema: querySchema,
+    preHandler: authenticate
+  }, queryHandler);
+  
+  fastify.post('/crawl', { 
+    schema: crawlSchema,
+    preHandler: authenticate
+  }, crawlHandler);
+  
+  fastify.get('/status', { 
+    schema: statusSchema,
+    preHandler: authenticate
+  }, statusHandler);
+  
 }
 
 export default routes;

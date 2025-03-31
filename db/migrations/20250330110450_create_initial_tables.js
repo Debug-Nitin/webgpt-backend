@@ -28,6 +28,15 @@ export function up(knex) {
         table.string('source_url')
         table.float('confidence')
       })
+      .createTable('users', function(table) {
+        table.increments('user_id').primary();
+        table.string('username').notNullable().unique();
+        table.string('password').notNullable();
+        table.boolean('is_admin').defaultTo(false);
+        table.timestamp('created_at').defaultTo(knex.fn.now());
+        table.timestamp('last_login').nullable();
+        table.boolean('is_active').defaultTo(true);
+      })
   }
   
 export function down(knex) {
@@ -35,5 +44,6 @@ export function down(knex) {
       .dropTableIfExists('query_logs')
       .dropTableIfExists('pages')
       .dropTableIfExists('websites')
+      .dropTableIfExists('users')
   }
   

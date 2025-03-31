@@ -3,16 +3,19 @@ import fastifyApiReference from '@scalar/fastify-api-reference';
 import { swaggerOptions } from '../config/swaggerConfig.js';
 
 export default async function registerDocumentation(app) {
-  // Swagger Configuration
+  // Register OpenAPI/Swagger documentation
   await app.register(fastifySwagger, swaggerOptions);
 
-  // Register fastifyApiReference
+  // Register Scalar API Reference UI
   await app.register(fastifyApiReference, {
     routePrefix: '/api-reference',
     configuration: {
-      title: 'API Reference',
-      description: 'API reference documentation',
+      title: 'WebGPT API Reference',
+      description: 'API documentation for the WebGPT service',
       version: '1.0.0',
+      theme: {
+        colorTheme: 'dark' // or 'light'
+      }
     }
   });
   

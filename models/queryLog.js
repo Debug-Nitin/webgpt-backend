@@ -1,5 +1,18 @@
 import { getDb } from '../config/db.js';
 
+// Schema definition matching migration
+export const schema = {
+  query_logs: {
+    query_id: { type: 'integer', primaryKey: true, autoIncrement: true },
+    timestamp: { type: 'timestamp', default: 'now()' },
+    user_query: { type: 'text', notNullable: true },
+    website_url: { type: 'string', nullable: true },
+    answer: { type: 'text', nullable: true },
+    source_url: { type: 'string', nullable: true },
+    confidence: { type: 'float', nullable: true }
+  }
+};
+
 // Insert query log
 export const logQuery = async (query, website_url, answer, source_url, confidence = null) => {
     try {

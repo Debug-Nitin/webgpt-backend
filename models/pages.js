@@ -1,5 +1,22 @@
 import { getDb } from '../config/db.js';
 
+// Schema definitions matching migration
+export const schema = {
+  websites: {
+    website_id: { type: 'integer', primaryKey: true, autoIncrement: true },
+    url: { type: 'string', unique: true, notNullable: true },
+    crawl_status: { type: 'enum', values: ['pending', 'crawling', 'completed', 'error'], default: 'pending' },
+    last_crawled: { type: 'timestamp', nullable: true }
+  },
+  pages: {
+    page_id: { type: 'integer', primaryKey: true, autoIncrement: true },
+    website_id: { type: 'integer', references: 'websites.website_id', onDelete: 'CASCADE' },
+    url: { type: 'string', unique: true, notNullable: true },
+    content: { type: 'text', nullable: true },
+    extracted_text: { type: 'text', nullable: true }
+  }
+};
+
 // Get page by URL
 export const getPageByUrl = async (url) => {
   try {
@@ -45,7 +62,7 @@ export const insertPage = async (websiteId, url, content, extractedText) => {
       : websiteId;
     
     const [pageId] = await db('pages').insert({
-      website_id: websiteId,
+      website_id: websiteIdValue,
       url,
       content,
       extracted_text: extractedText,
@@ -77,7 +94,8 @@ export const getOrInsertWebsite = async (url) => {
         crawl_status: 'completed',
         last_crawled: new Date()
       })
-      .returning('website_id');  // Change from 'id' to 'website_id'
+      .returning('website_id');
+    
     const websiteId = result[0]?.website_id || result[0];
     return websiteId;
   } catch (error) {
